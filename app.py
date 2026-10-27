@@ -24,10 +24,13 @@ VARS_QUANT = [
 ]
 STATUS_OPCOES = ["Todos", "Vencedor", "Não Vencedor"]
 decadas = sorted(df["Decade"].unique())
+NACIONALIDADES = sorted(df["Nationality"].unique())
+# Métrica do Top 10 do Dashboard 2: rótulo -> coluna do dataset
+METRICAS_TOP = {"Vitórias": "Race_Wins", "Pódios": "Podiums", "Pontos": "Points"}
 
 # Sidebar: filtros (variáveis + intervalo)
 with st.sidebar:
-    st.header("Filtros")
+    st.header("Filtros do Dashboard 1")
 
     variaveis = st.multiselect(
         "Variáveis",
@@ -74,6 +77,39 @@ with st.sidebar:
         help="Filtra por pilotos campeões (Vencedor) ou não (Não Vencedor).",
     )
 
+    st.divider()
+    st.header("Filtros do Dashboard 2")
+
+    kpi_decada_inicio, kpi_decada_fim = st.select_slider(
+        "Intervalo de décadas",
+        options=decadas,
+        value=(decadas[0], decadas[-1]),
+        key="kpi_decadas",
+        help="Mantém só os pilotos cuja década de estreia está no intervalo.",
+    )
+
+    kpi_nacionalidades = st.multiselect(
+        "Nacionalidade",
+        options=NACIONALIDADES,
+        placeholder="Todas",
+        key="kpi_nacionalidades",
+        help="Vazio = todas as nacionalidades.",
+    )
+
+    kpi_status = st.segmented_control(
+        "Status",
+        options=STATUS_OPCOES,
+        default="Todos",
+        key="kpi_status",
+    )
+
+    metrica_top = st.segmented_control(
+        "Métrica do Top 10",
+        options=list(METRICAS_TOP),
+        default="Vitórias",
+        key="kpi_metrica_top",
+    )
+
 # Aplica os filtros
 df_filtrado = df[
     df["Decade"].between(decada_inicio, decada_fim)
@@ -84,14 +120,14 @@ df_filtrado = df[
 if status in ("Vencedor", "Não Vencedor"):
     df_filtrado = df_filtrado[df_filtrado["Status_Campeao"] == status]
 
-st.caption(f"{len(df_filtrado)} de {len(df)} pilotos com os filtros atuais.")
-
 tab_correlacao, tab_kpis = st.tabs(
     ["Dashboard 1: correlação e distribuição", "Dashboard 2: KPIs"]
 )
 
 # Dashboard 1: correlação (heatmap) em cima, distribuição (histograma) embaixo
 with tab_correlacao:
+    st.caption(f"{len(df_filtrado)} de {len(df)} pilotos com os filtros do Dashboard 1.")
+
     with st.container(border=True):
         st.subheader("Correlação")
         st.caption("Heatmap da correlação entre as variáveis selecionadas.")
@@ -155,14 +191,90 @@ with tab_correlacao:
                 with colunas[i % 2]:
                     st.altair_chart(histograma, alt=f"Histograma da variável {variavel}")
 
+# Dashboard 2: filtros próprios (década, nacionalidade, status)
+df_kpi = df[df["Decade"].between(kpi_decada_inicio, kpi_decada_fim)]
+if kpi_nacionalidades:
+    df_kpi = df_kpi[df_kpi["Nationality"].isin(kpi_nacionalidades)]
+if kpi_status in ("Vencedor", "Não Vencedor"):
+    df_kpi = df_kpi[df_kpi["Status_Campeao"] == kpi_status]
+
 # Dashboard 2: KPIs
 with tab_kpis:
-    with st.container(horizontal=True):
-        st.metric("Pilotos", "—", border=True)
-        st.metric("Campeões", "—", border=True)
-        st.metric("Vitórias", "—", border=True)
-        st.metric("Pontos", "—", border=True)
+    st.caption(f"{len(df_kpi)} de {len(df)} pilotos com os filtros do Dashboard 2.")
 
-    with st.container(border=True):
-        st.subheader("Top 10 pilotos")
-        # TODO: gráfico de barras com os 10 pilotos de mais Race_Wins
+    if df_kpi.empty:
+        st.warning("Nenhum piloto com os filtros atuais. Amplie a seleção na sidebar.")
+    else:
+        n_pilotos = len(df_kpi)
+        n_campeoes = int(df_kpi["Champion"].sum())
+        n_vitorias = int(df_kpi["Race_Wins"].sum())
+        n_vencedores = int((df_kpi["Race_Wins"] > 0).sum())
+        ppc_mediana = df_kpi["Points_Per_Entry"].median()
+        ppc_media = df_kpi["Points_Per_Entry"].mean()
+
+        with st.container(horizontal=True):
+            st.metric(
+                "Pilotos",
+                f"{n_pilotos:,}".replace(",", "."),
+                help="Pilotos que estrearam na janela de décadas e passam pelos filtros.",
+                border=True,
+            )
+            st.metric(
+                "Campeões",
+                n_campeoes,
+                delta=f"{n_campeoes / n_pilotos:.1%} dos pilotos",
+                delta_color="off",
+                help="Pilotos com pelo menos um título mundial.",
+                border=True,
+            )
+            st.metric(
+                "Vitórias",
+                f"{n_vitorias:,}".replace(",", "."),
+                delta=f"{n_vencedores / n_pilotos:.1%} dos pilotos venceram",
+                delta_color="off",
+                help="Soma de vitórias; o delta mostra a parcela que venceu ao menos uma corrida.",
+                border=True,
+            )
+            st.metric(
+                "Pontos por corrida (mediana)",
+                f"{ppc_mediana:.2f}",
+                delta=f"média {ppc_media:.2f}",
+                delta_color="off",
+                help="Mediana de Points_Per_Entry. A mediana é usada porque a maioria dos pilotos tem 0 pontos e a média é puxada pelos campeões.",
+                border=True,
+            )
+
+        coluna_top = METRICAS_TOP[metrica_top or "Vitórias"]
+        with st.container(border=True):
+            st.subheader(f"Top 10 pilotos por {(metrica_top or 'Vitórias').lower()}")
+            top10 = df_kpi.nlargest(10, coluna_top)[["Driver", coluna_top, "Status_Campeao"]]
+            if top10[coluna_top].max() == 0:
+                st.info("Nenhum piloto da seleção pontuou nesta métrica.")
+            else:
+                grafico_top = (
+                    alt.Chart(top10)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X(f"{coluna_top}:Q", title=metrica_top or "Vitórias"),
+                        y=alt.Y("Driver:N", sort="-x", title=None),
+                        color=alt.Color("Status_Campeao:N", title="Status"),
+                        tooltip=["Driver", alt.Tooltip(f"{coluna_top}:Q", title=metrica_top), "Status_Campeao"],
+                    )
+                    .properties(height=320)
+                )
+                st.altair_chart(grafico_top, alt="Top 10 pilotos pela métrica escolhida")
+
+        with st.container(border=True):
+            st.subheader("Pilotos por década de estreia")
+            por_decada = df_kpi.groupby("Decade", as_index=False).size().rename(columns={"size": "Pilotos"})
+            grafico_decada = (
+                alt.Chart(por_decada)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Decade:O", title="Década de estreia"),
+                    y=alt.Y("Pilotos:Q"),
+                    tooltip=["Decade", "Pilotos"],
+                )
+                .properties(height=240)
+            )
+            st.altair_chart(grafico_decada, alt="Quantidade de pilotos por década de estreia")
