@@ -4,7 +4,7 @@
 
 **Público-alvo do Dashboard 2:** fãs e profissionais de comunicação esportiva (redatores, produtores de conteúdo e narradores) que querem contextualizar a carreira dos pilotos sem ler histograma, boxplot ou correlação. Não se espera conhecimento de estatística, só interesse em F1.
 
-**Por que as métricas usam contagens, proporções e mediana:** a distribuição dos dados é muito assimétrica. A mediana de corridas disputadas é 7, e a mediana de vitórias, poles, pódios e pontos é **0**. Só 113 pilotos (13%) venceram alguma corrida e 348 (40%) pontuaram. Uma média simples descreveria um "piloto típico" que não existe, porque ela é puxada por poucos campeões. Por isso o painel traz totais, proporções e, quando precisa de um valor típico, a mediana.
+
 
 ## Métrica 1: Pilotos
 - **Variável:** `Driver` (contagem de linhas), filtrada por década de estreia (`Decade`), `Nationality` e `Status_Campeao`.
@@ -46,5 +46,4 @@
 - **Qual decisão pode ser apoiada por essa métrica?** Escolher quem destacar numa matéria, vinheta ou transmissão, e verificar uma afirmação ("quem mais venceu no Brasil?") com o filtro de nacionalidade.
 - **O que comunica ao público-alvo:** quem lidera cada critério e quão grande é a distância entre o primeiro e os demais.
 
-## Gráfico de apoio: Pilotos por década de estreia
-Não é uma métrica, mas dá contexto para as anteriores. Mostra que o grid de estreantes caiu de 236 pilotos nos anos 1960 para 37 nos anos 2020, e explica por que comparar totais entre décadas deve ser feito com cuidado.
+=
