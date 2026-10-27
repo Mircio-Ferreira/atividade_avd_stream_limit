@@ -1,20 +1,38 @@
-# Configuração do Streamlit. Descomente e ajuste conforme o projeto avançar.
-# O tema pode ser trocado pelo menu ⋮ → Settings → Choose app theme.
+# Identidade visual do app: cores temáticas da Fórmula 1 (vermelho, preto/carbono e branco).
+# Tema fixo (escuro). Para mudar cores, edite aqui; o Streamlit recarrega no próximo rerun.
 
 [theme]
-paddingTop = "0.5rem"     # espaço abaixo da barra do topo (valor entre aspas)
-# font = "sans serif"     # "sans serif", "serif" ou "monospace"
+base = "dark"
+primaryColor = "#E10600"              # vermelho F1: destaque de widgets, links e barras
+backgroundColor = "#15151E"           # preto carbono
+secondaryBackgroundColor = "#1F1F2B"  # fundo de widgets e containers
+textColor = "#F5F5F5"
+borderColor = "#3A3A4A"
+linkColor = "#FF6B64"
+showWidgetBorder = true
+baseRadius = "4px"                    # cantos quase retos, como no visual da F1
+buttonRadius = "4px"
+paddingTop = "0.5rem"
+baseFontSize = 18                     # padrão é 16; a Titillium Web é compacta, então sobe um pouco
+metricValueFontSize = "2.5rem"        # números dos KPIs em destaque
 
-[theme.light]
-primaryColor = "#ff4b4b"            # cor de destaque (widgets, links)
-backgroundColor = "#ffffff"         # fundo da página
-secondaryBackgroundColor = "#f0f2f6"  # fundo da sidebar e de widgets
-textColor = "#31333f"               # cor do texto
-borderColor = "#d5dae5"
+font = "'Titillium Web':https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap"
+headingFont = "'Titillium Web':https://fonts.googleapis.com/css2?family=Titillium+Web:wght@700&display=swap"
+headingFontWeights = [700, 700, 700, 600, 600, 600]
 
-[theme.dark]
-primaryColor = "#ff4b4b"
-backgroundColor = "#0e1117"
-secondaryBackgroundColor = "#262730"
-textColor = "#fafafa"
-borderColor = "#41444e"
+# Cores semânticas
+redColor = "#E10600"
+greenColor = "#00D26A"
+yellowColor = "#FFD700"
+blueColor = "#4DA3FF"
+grayColor = "#9A9AAE"
+
+# Gráficos (Altair e Plotly): vermelho F1 primeiro, depois prata, ouro e tons de apoio
+chartCategoricalColors = ["#E10600", "#C0C0CC", "#FFD700", "#4DA3FF", "#00D26A", "#FF8700", "#9A9AAE"]
+chartSequentialColors = ["#2A1A1C", "#4A1A1C", "#6B1A1C", "#8C1A1A", "#A81410", "#C70E08", "#E10600", "#FF3B30", "#FF6B64", "#FF9C96"]
+chartDivergingColors = ["#4DA3FF", "#6FB4FF", "#94C7FF", "#BDDCFF", "#E3EFFF", "#FFE3E1", "#FFB8B3", "#FF857E", "#F0433B", "#E10600"]
+
+[theme.sidebar]
+backgroundColor = "#0B0B12"           # sidebar mais escura que a página
+secondaryBackgroundColor = "#1F1F2B"
+borderColor = "#E10600"

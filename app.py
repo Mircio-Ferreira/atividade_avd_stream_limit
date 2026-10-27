@@ -25,6 +25,14 @@ VARS_QUANT = [
 STATUS_OPCOES = ["Todos", "Vencedor", "Não Vencedor"]
 decadas = sorted(df["Decade"].unique())
 NACIONALIDADES = sorted(df["Nationality"].unique())
+def texto_maior(grafico):
+    """Aumenta eixos, legendas e títulos dos gráficos Altair (o padrão é pequeno)."""
+    return (
+        grafico.configure_axis(labelFontSize=13, titleFontSize=14)
+        .configure_legend(labelFontSize=13, titleFontSize=14)
+        .configure_title(fontSize=15)
+    )
+
 # Métrica do Top 10 do Dashboard 2: rótulo -> coluna do dataset
 METRICAS_TOP = {"Vitórias": "Race_Wins", "Pódios": "Podiums", "Pontos": "Points"}
 
@@ -192,7 +200,7 @@ if tab_correlacao.open:
                     ),
                 )
                 st.altair_chart(
-                    heatmap + rotulos,
+                    texto_maior(heatmap + rotulos),
                     alt="Heatmap da correlação entre as variáveis quantitativas selecionadas",
                 )
 
@@ -219,7 +227,7 @@ if tab_correlacao.open:
                         .properties(title=variavel, height=220)
                     )
                     with colunas[i % 2]:
-                        st.altair_chart(histograma, alt=f"Histograma da variável {variavel}")
+                        st.altair_chart(texto_maior(histograma), alt=f"Histograma da variável {variavel}")
 
 if tab_kpis.open:
     # Dashboard 2: filtros próprios (década, nacionalidade, status)
@@ -293,7 +301,7 @@ if tab_kpis.open:
                         )
                         .properties(height=320)
                     )
-                    st.altair_chart(grafico_top, alt="Top 10 pilotos pela métrica escolhida")
+                    st.altair_chart(texto_maior(grafico_top), alt="Top 10 pilotos pela métrica escolhida")
 
             with st.container(border=True):
                 st.subheader("Pilotos por década de estreia")
@@ -308,4 +316,4 @@ if tab_kpis.open:
                     )
                     .properties(height=240)
                 )
-                st.altair_chart(grafico_decada, alt="Quantidade de pilotos por década de estreia")
+                st.altair_chart(texto_maior(grafico_decada), alt="Quantidade de pilotos por década de estreia")
