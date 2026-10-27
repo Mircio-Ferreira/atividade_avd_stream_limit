@@ -143,6 +143,9 @@ with tab_correlacao:
                 .reset_index(names="var_x")
                 .melt(id_vars="var_x", var_name="var_y", value_name="corr")
             )
+            # Só o triângulo inferior: a matriz é simétrica, então o resto repete valores
+            posicao = {v: i for i, v in enumerate(variaveis)}
+            corr = corr[corr["var_y"].map(posicao) >= corr["var_x"].map(posicao)]
             base = alt.Chart(corr).encode(
                 x=alt.X("var_x:N", title=None, sort=variaveis),
                 y=alt.Y("var_y:N", title=None, sort=variaveis),
