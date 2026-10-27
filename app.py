@@ -1,3 +1,4 @@
+import altair as alt
 import streamlit as st
 
 from src.data_loader import load_data
@@ -97,9 +98,37 @@ with tab_correlacao:
 
         if len(variaveis) < 2:
             st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
+        elif len(df_filtrado) < 2:
+            st.warning("Poucos pilotos com os filtros atuais para calcular a correlação.")
         else:
-            # TODO: df_filtrado[variaveis].corr() + heatmap (plotly px.imshow)
-            pass
+            corr = (
+                df_filtrado[variaveis]
+                .corr()
+                .reset_index(names="var_x")
+                .melt(id_vars="var_x", var_name="var_y", value_name="corr")
+            )
+            base = alt.Chart(corr).encode(
+                x=alt.X("var_x:N", title=None, sort=variaveis),
+                y=alt.Y("var_y:N", title=None, sort=variaveis),
+            )
+            heatmap = base.mark_rect().encode(
+                color=alt.Color(
+                    "corr:Q",
+                    title="Correlação",
+                    scale=alt.Scale(domain=[-1, 1], scheme="redblue", reverse=True),
+                ),
+                tooltip=["var_x", "var_y", alt.Tooltip("corr:Q", format=".2f")],
+            )
+            rotulos = base.mark_text().encode(
+                text=alt.Text("corr:Q", format=".2f"),
+                color=alt.condition(
+                    "abs(datum.corr) > 0.6", alt.value("white"), alt.value("black")
+                ),
+            )
+            st.altair_chart(
+                heatmap + rotulos,
+                alt="Heatmap da correlação entre as variáveis quantitativas selecionadas",
+            )
 
     with st.container(border=True):
         st.subheader("Distribuição")
@@ -109,7 +138,19 @@ with tab_correlacao:
             st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
         else:
             variavel_hist = st.selectbox("Variável do histograma", options=variaveis)
-            # TODO: histograma de variavel_hist (plotly px.histogram)
+            histograma = (
+                alt.Chart(df_filtrado)
+                .mark_bar()
+                .encode(
+                    x=alt.X(f"{variavel_hist}:Q", bin=alt.Bin(maxbins=30), title=variavel_hist),
+                    y=alt.Y("count()", title="Pilotos"),
+                    tooltip=[
+                        alt.Tooltip(f"{variavel_hist}:Q", bin=alt.Bin(maxbins=30), title=variavel_hist),
+                        alt.Tooltip("count()", title="Pilotos"),
+                    ],
+                )
+            )
+            st.altair_chart(histograma, alt=f"Histograma da variável {variavel_hist}")
 
 # Dashboard 2: KPIs
 with tab_kpis:
