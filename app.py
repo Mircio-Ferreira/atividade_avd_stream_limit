@@ -132,25 +132,28 @@ with tab_correlacao:
 
     with st.container(border=True):
         st.subheader("Distribuição")
-        st.caption("Histograma de uma variável à escolha.")
+        st.caption("Histograma de cada variável selecionada.")
 
         if not variaveis:
             st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
         else:
-            variavel_hist = st.selectbox("Variável do histograma", options=variaveis)
-            histograma = (
-                alt.Chart(df_filtrado)
-                .mark_bar()
-                .encode(
-                    x=alt.X(f"{variavel_hist}:Q", bin=alt.Bin(maxbins=30), title=variavel_hist),
-                    y=alt.Y("count()", title="Pilotos"),
-                    tooltip=[
-                        alt.Tooltip(f"{variavel_hist}:Q", bin=alt.Bin(maxbins=30), title=variavel_hist),
-                        alt.Tooltip("count()", title="Pilotos"),
-                    ],
+            colunas = st.columns(2)
+            for i, variavel in enumerate(variaveis):
+                histograma = (
+                    alt.Chart(df_filtrado)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X(f"{variavel}:Q", bin=alt.Bin(maxbins=30), title=variavel),
+                        y=alt.Y("count()", title="Pilotos"),
+                        tooltip=[
+                            alt.Tooltip(f"{variavel}:Q", bin=alt.Bin(maxbins=30), title=variavel),
+                            alt.Tooltip("count()", title="Pilotos"),
+                        ],
+                    )
+                    .properties(title=variavel, height=220)
                 )
-            )
-            st.altair_chart(histograma, alt=f"Histograma da variável {variavel_hist}")
+                with colunas[i % 2]:
+                    st.altair_chart(histograma, alt=f"Histograma da variável {variavel}")
 
 # Dashboard 2: KPIs
 with tab_kpis:
