@@ -1,4 +1,5 @@
 import altair as alt
+import plotly.express as px
 import streamlit as st
 
 from src.data_loader import load_data
@@ -32,6 +33,44 @@ def texto_maior(grafico):
         .configure_legend(labelFontSize=13, titleFontSize=14)
         .configure_title(fontSize=15)
     )
+
+# Países históricos que não existem mais -> país atual (o mapa usa as fronteiras de hoje)
+PAISES_ATUAIS = {
+    "West Germany": "Germany",
+    "East Germany": "Germany",
+    "Rhodesia": "Zimbabwe",
+    "Rhodesia and Nyasaland": "Zimbabwe",
+}
+
+# Código ISO-3 de cada país do dataset (o plotly desenha o mapa a partir dele)
+ISO3 = {
+    "Argentina": "ARG", "Australia": "AUS", "Austria": "AUT", "Belgium": "BEL", "Brazil": "BRA",
+    "Canada": "CAN", "Chile": "CHL", "China": "CHN", "Colombia": "COL", "Czech Republic": "CZE",
+    "Denmark": "DNK", "Finland": "FIN", "France": "FRA", "Germany": "DEU", "Hungary": "HUN",
+    "India": "IND", "Indonesia": "IDN", "Ireland": "IRL", "Italy": "ITA", "Japan": "JPN",
+    "Liechtenstein": "LIE", "Malaysia": "MYS", "Mexico": "MEX", "Monaco": "MCO", "Morocco": "MAR",
+    "Netherlands": "NLD", "New Zealand": "NZL", "Poland": "POL", "Portugal": "PRT", "Russia": "RUS",
+    "South Africa": "ZAF", "Spain": "ESP", "Sweden": "SWE", "Switzerland": "CHE", "Thailand": "THA",
+    "United Kingdom": "GBR", "United States": "USA", "Uruguay": "URY", "Venezuela": "VEN",
+    "Zimbabwe": "ZWE",
+}
+
+
+def pilotos_por_pais(dados):
+    """Conta pilotos e vitórias por país. Pilotos com duas nacionalidades contam nas duas."""
+    paises = (
+        dados.assign(Pais=dados["Nationality"].str.replace("\xa0", ",").str.split(","))
+        .explode("Pais")
+        .assign(Pais=lambda d: d["Pais"].str.strip().replace(PAISES_ATUAIS))
+        .drop_duplicates(["Driver", "Pais"])  # "East Germany, West Germany" vira só Germany
+    )
+    paises = paises[paises["Pais"] != "RAF"]  # não é um país
+    por_pais = paises.groupby("Pais", as_index=False).agg(
+        Pilotos=("Driver", "count"), Vitórias=("Race_Wins", "sum")
+    )
+    por_pais["ISO3"] = por_pais["Pais"].map(ISO3)
+    return por_pais
+
 
 # Métrica do Top 10 do Dashboard 2: rótulo -> coluna do dataset
 METRICAS_TOP = {"Vitórias": "Race_Wins", "Pódios": "Podiums", "Pontos": "Points"}
@@ -317,3 +356,28 @@ if tab_kpis.open:
                     .properties(height=240)
                 )
                 st.altair_chart(texto_maior(grafico_decada), alt="Quantidade de pilotos por década de estreia")
+
+            with st.container(border=True):
+                st.subheader("Pilotos por país")
+                st.caption("Mapa-múndi com a quantidade de pilotos por nacionalidade (fronteiras atuais).")
+                mapa = px.choropleth(
+                    pilotos_por_pais(df_kpi),
+                    locations="ISO3",
+                    color="Pilotos",
+                    hover_name="Pais",
+                    hover_data={"ISO3": False, "Pilotos": True, "Vitórias": True},
+                    color_continuous_scale=["#2A1A1C", "#8C1A1A", "#E10600", "#FF9C96"],
+                    projection="mercator",
+                )
+                mapa.update_geos(
+                    showframe=False,
+                    lataxis_range=[-58, 80],  # corta a Antártida e o extremo norte
+                    lonaxis_range=[-170, 180],
+                    showcountries=True,
+                    countrycolor="#3A3A4A",
+                    showcoastlines=False,
+                    bgcolor="rgba(0,0,0,0)",
+                    landcolor="#1F1F2B",
+                )
+                mapa.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=420)
+                st.plotly_chart(mapa)
